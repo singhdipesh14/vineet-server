@@ -1,4 +1,4 @@
-import express, { Request, Response, Application, NextFunction } from "express" // express
+import express, { Application } from "express" // express
 import dotenv from "dotenv" // env variables
 import connectDB from "./db/connect" // database
 import "express-async-errors"
@@ -7,6 +7,10 @@ import cookieParser from "cookie-parser"
 import fileUpload from "express-fileupload"
 import { v2 as cloudinary } from "cloudinary"
 import cors from "cors"
+import rateLimiter from "express-rate-limit"
+import helmet from "helmet"
+import xss from "xss-clean"
+import ExpressMongoSanitize from "express-mongo-sanitize"
 
 // middlewares
 import notFoundMiddleware from "./middleware/not-found"
@@ -28,17 +32,25 @@ cloudinary.config({
 	api_secret: process.env.CLOUDINARY_SECRET,
 })
 
+//security
+app.set("trust proxy", 1)
+app.use(
+	rateLimiter({
+		windowMs: 15 * 60 * 1000,
+		max: 60,
+	})
+)
+app.use(helmet())
+app.use(cors({ credentials: true }))
+app.use(xss())
+app.use(ExpressMongoSanitize())
+
 // applying middlewares
-app.use(cors())
-app.use(morgan("tiny"))
+if (process.env.NODE_ENV === "development") app.use(morgan("tiny"))
 app.use(express.json())
 app.use(cookieParser(process.env.JWT_SECRET))
 app.use(express.static("./public"))
 app.use(fileUpload({ useTempFiles: true }))
-
-app.get("/api/v1", (req: Request, res: Response) => {
-	res.send("hello world")
-})
 
 // methods
 app.use("/api/v1/auth", authRouter)

@@ -1,1 +1,1 @@
-web: ts-node index.ts
+web: tsc && node dist/index.js

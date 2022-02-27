@@ -62,7 +62,6 @@ const forgotPassword = async (req: Request, res: Response) => {
 	const user = await User.findOne({ email })
 	if (!user) throw new CustomError.NotFoundError(`No user with email ${email}`)
 	const newPassword = generateString(10)
-	console.log(`New password for ${email} is ${newPassword}`)
 	user.password = newPassword
 	await user.save()
 	sgMail.setApiKey(process.env.SENDGRID_API_KEY || "")
@@ -77,6 +76,7 @@ const forgotPassword = async (req: Request, res: Response) => {
 		.status(StatusCodes.OK)
 		.json({ msg: "Check your email for the new password" })
 }
+
 export const uploadImage = async (req: Request, res: Response) => {
 	if (!req.files) throw new CustomError.BadRequestError("No file Uploaded")
 	const productImage = req.files.image

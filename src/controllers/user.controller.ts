@@ -4,6 +4,8 @@ import { StatusCodes } from "http-status-codes"
 import CustomError from "../errors"
 import { createTokenUser, jwt, checkPermissions } from "../utils"
 import { HydratedDocument } from "mongoose"
+import Blog from "../models/blog.model"
+import sgMail from "@sendgrid/mail"
 
 const { attachCookiesToResponse } = jwt
 
@@ -28,17 +30,33 @@ export const createUser = async (req: Request, res: Response) => {
 		)
 	}
 	const user = await User.create({ email, password, name, role, image })
+	sgMail.setApiKey(process.env.SENDGRID_API_KEY || "")
+	const msg = {
+		to: email, // Change to your recipient
+		from: process.env.EMAIL_FROM || "", // Change to your verified sender
+		subject: `Welcome to Vineet Singh's Blog!`,
+		text: `Here are your credentials:\nEmail : ${email}\nPassword : ${password}\nPlease change your password after logging in.`,
+	}
+	const info = await sgMail.send(msg)
 	const tokenUser = createTokenUser(user)
 	res.status(StatusCodes.CREATED).json({ user: tokenUser })
 }
 
 export const deleteUser = async (req: Request, res: Response) => {
 	const { id } = req.params
-
+	const { userId } = req.user
 	const user = await User.findOne({ _id: id })
 	if (!user) {
 		throw new CustomError.BadRequestError(`No user found with id ${id}`)
 	}
+	const blogs = await Blog.find({ user: id })
+
+	await Promise.all(
+		blogs.map(async (blog) => {
+			blog.user = userId
+			await blog.save()
+		})
+	)
 	await user.remove()
 	res.status(StatusCodes.OK).json({ msg: `User ${id} removed successfully` })
 }
@@ -55,7 +73,10 @@ export const getSingleUser = async (req: Request, res: Response) => {
 }
 
 export const showCurrentUser = async (req: Request, res: Response) => {
-	res.status(StatusCodes.OK).json({ user: req.user })
+	const { name, userId, role } = req.user
+	const tokenUser = createTokenUser({ name, role, _id: userId })
+	attachCookiesToResponse({ res, user: tokenUser })
+	res.status(StatusCodes.OK).json({ user: tokenUser })
 }
 
 export const updateUser = async (req: Request, res: Response) => {
