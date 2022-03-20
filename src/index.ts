@@ -41,7 +41,13 @@ app.use(
 	})
 )
 app.use(helmet())
-app.use(cors({ credentials: true, origin: "https://vineet-singh.netlify.app" }))
+app.use(
+	cors({
+		credentials: true,
+		origin: process.env.CORS_ORIGIN,
+		allowedHeaders: ["Content-Type", "Authorization"],
+	})
+)
 app.use(xss())
 app.use(ExpressMongoSanitize())
 
