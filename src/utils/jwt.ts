@@ -29,6 +29,7 @@ export const attachCookiesToResponse = ({ res, user }: cookiesPayload) => {
 		expires: new Date(Date.now() + oneDay),
 		secure: process.env.NODE_ENV === "production",
 		signed: true,
-		domain: process.env.COOKIE_DOMAIN
+		domain: process.env.COOKIE_DOMAIN,
+		sameSite: "none"
 	})
 }
