@@ -4,8 +4,6 @@ import { StatusCodes } from "http-status-codes"
 import CustomError from "../errors"
 import { jwt, createTokenUser } from "../utils"
 import { randomString as generateString } from "../utils"
-import { v2 as cloudinary } from "cloudinary"
-import fs from "fs"
 import sgMail from "@sendgrid/mail"
 
 const { attachCookiesToResponse } = jwt
@@ -77,27 +75,6 @@ const forgotPassword = async (req: Request, res: Response) => {
 		.json({ msg: "Check your email for the new password" })
 }
 
-export const uploadImage = async (req: Request, res: Response) => {
-	if (!req.files) throw new CustomError.BadRequestError("No file Uploaded")
-	const productImage = req.files.image
-	if (Array.isArray(productImage)) {
-		throw new CustomError.BadRequestError("Please Upload only one file")
-	}
-	if (!productImage.mimetype.startsWith("image")) {
-		throw new CustomError.BadRequestError("Please only upload images")
-	}
-	const maxSize = 1024 * 1024
-	if (productImage.size > maxSize) {
-		throw new CustomError.BadRequestError("Image size must be less than 1MB")
-	}
-	const result = await cloudinary.uploader.upload(productImage.tempFilePath, {
-		use_filename: true,
-		folder: "vineet-portfolio-users",
-	})
-	fs.unlinkSync(productImage.tempFilePath)
-	return res.status(StatusCodes.OK).json({ image: result.secure_url })
-}
-
-const exportVar = { login, logout, register, forgotPassword, uploadImage }
+const exportVar = { login, logout, register, forgotPassword }
 
 export default exportVar

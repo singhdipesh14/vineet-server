@@ -21,6 +21,8 @@ import authRouter from "./routes/auth.route"
 import userRouter from "./routes/user.route"
 import contactRouter from "./routes/contact.route"
 import blogRouter from "./routes/blog.route"
+import positionRouter from "./routes/position.route"
+import photoRouter from "./routes/photo.route"
 
 // configurations
 dotenv.config()
@@ -63,6 +65,8 @@ app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/contact", contactRouter)
 app.use("/api/v1/blogs", blogRouter)
+app.use("/api/v1/positions", positionRouter)
+app.use("/api/v1/photos", photoRouter)
 app.use(notFoundMiddleware)
 app.use(errorHandlerMiddleware)
 
