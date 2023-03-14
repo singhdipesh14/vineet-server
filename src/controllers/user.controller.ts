@@ -5,41 +5,40 @@ import CustomError from "../errors"
 import { createTokenUser, jwt, checkPermissions } from "../utils"
 import { HydratedDocument } from "mongoose"
 import Blog from "../models/blog.model"
-import sgMail from "@sendgrid/mail"
+import sendEmail from "../utils/sendEmail"
 
 const { attachCookiesToResponse } = jwt
 
 export const getAllUsers = async (req: Request, res: Response) => {
-	const users: HydratedDocument<UserSchemaType>[] | null = await User.find(
-		{}
-	).select("-password")
-	res.status(StatusCodes.OK).json({ users })
+    const users: HydratedDocument<UserSchemaType>[] | null = await User.find(
+        {}
+    ).select("-password")
+    res.status(StatusCodes.OK).json({ users })
 }
 
 export const createUser = async (req: Request, res: Response) => {
-	const { name, email, password, image, role } = req.body
-	if (!name || !email || !password || !role) {
-		throw new CustomError.BadRequestError(
-			"Please provide all the required details"
-		)
-	}
-	const isAlreadyUser = await User.findOne({ email })
-	if (isAlreadyUser) {
-		throw new CustomError.BadRequestError(
-			`User already exists with email ${email}`
-		)
-	}
-	const user = await User.create({ email, password, name, role, image })
-	sgMail.setApiKey(process.env.SENDGRID_API_KEY || "")
-	const msg = {
-		to: email, // Change to your recipient
-		from: process.env.EMAIL_FROM || "", // Change to your verified sender
-		subject: `Welcome to Vineet Singh's Blog!`,
-		text: `Here are your credentials:\nEmail : ${email}\nPassword : ${password}\nPlease change your password after logging in.`,
-	}
-	const info = await sgMail.send(msg)
-	const tokenUser = createTokenUser(user)
-	res.status(StatusCodes.CREATED).json({ user: tokenUser })
+    const { name, email, password, image, role } = req.body
+    if (!name || !email || !password || !role) {
+        throw new CustomError.BadRequestError(
+            "Please provide all the required details"
+        )
+    }
+    const isAlreadyUser = await User.findOne({ email })
+    if (isAlreadyUser) {
+        throw new CustomError.BadRequestError(
+            `User already exists with email ${email}`
+        )
+    }
+    const user = await User.create({ email, password, name, role, image })
+    const msg = {
+        to: email, // Change to your recipient
+        from: process.env.EMAIL_FROM || "", // Change to your verified sender
+        subject: `Welcome to Vineet Singh's Blog!`,
+        text: `Here are your credentials:\nEmail : ${email}\nPassword : ${password}\nPlease change your password after logging in.`,
+    }
+    await sendEmail(msg)
+    const tokenUser = createTokenUser(user)
+    res.status(StatusCodes.CREATED).json({ user: tokenUser })
 }
 
 export const deleteUser = async (req: Request, res: Response) => {
